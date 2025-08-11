@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Write to a Text File</title>
+</head>
+<body>
+    <h2>Write to a Text File</h2>
+    <form id="writeForm">
+        <label>File Name (with .txt): <input type="text" name="fileName" required></label><br><br>
+        <label>Content:<br><textarea name="content" rows="6" cols="40" required></textarea></label><br><br>
+        <button type="submit">Write</button>
+    </form>
+    <p id="result"></p>
+    <pre id="fileContent" style="background:#f4f4f4;padding:10px;"></pre>
+    <script>
+    document.getElementById('writeForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const fileName = this.fileName.value;
+        const content = this.content.value;
+        const res = await fetch('/api/write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName, content })
+        });
+        const data = await res.json();
+        document.getElementById('result').textContent = data.message || data.error;
+        if (data.message) {
+            // Fetch and show file content
+            const fileRes = await fetch(`/files/${fileName}`);
+            if (fileRes.ok) {
+                const text = await fileRes.text();
+                document.getElementById('fileContent').textContent = text;
+            } else {
+                document.getElementById('fileContent').textContent = 'Could not load file content.';
+            }
+        } else {
+            document.getElementById('fileContent').textContent = '';
+        }
+    };
+    </script>
+</body>
+</html>

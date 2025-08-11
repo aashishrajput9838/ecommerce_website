@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create</title>
+</head>
+<body>
+
+    <h1>Create a Text File</h1>
+    <h2>Enter file name</h2>
+    <input type="text" id="fileName" placeholder="type here !">
+    <button onclick="createFile()">Create file</button>
+    <h2>Created Files:</h2>
+    <ul id="fileList"></ul>
+
+
+        <script>
+            async function createFile() {
+                const fileName = document.getElementById('fileName').value.trim();
+                if (!fileName) {
+                    alert('Please enter a file name.');
+                    return;
+                }
+                try {
+                    const response = await fetch('http://localhost:3000/api/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ fileName })
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert(result.message);
+                        loadFiles();
+                    } else {
+                        alert(result.error);
+                    }
+                } catch (error) {
+                    alert('Error connecting to server.');
+                }
+            }
+
+            async function loadFiles() {
+                try {
+                    const response = await fetch('http://localhost:3000/api/files');
+                    const result = await response.json();
+                    const fileList = document.getElementById('fileList');
+                    fileList.innerHTML = '';
+                    if (result.files && result.files.length > 0) {
+                        result.files.forEach(file => {
+                            const li = document.createElement('li');
+                            li.style.display = 'flex';
+                            li.style.alignItems = 'center';
+                            // File name
+                            const span = document.createElement('span');
+                            span.textContent = file;
+                            span.style.marginRight = '10px';
+                            li.appendChild(span);
+                            // Open button
+                            const openBtn = document.createElement('button');
+                            openBtn.textContent = 'Open';
+                            openBtn.style.marginRight = '5px';
+                            openBtn.onclick = () => {
+                                window.open(`http://localhost:3000/files/${encodeURIComponent(file)}`, '_blank');
+                            };
+                            li.appendChild(openBtn);
+                            // Download button
+                            const downloadBtn = document.createElement('button');
+                            downloadBtn.textContent = 'Download';
+                            downloadBtn.onclick = () => {
+                                const a = document.createElement('a');
+                                a.href = `http://localhost:3000/files/${encodeURIComponent(file)}?download=1`;
+                                a.download = file;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                            };
+                            li.appendChild(downloadBtn);
+                            fileList.appendChild(li);
+                        });
+                    } else {
+                        fileList.innerHTML = '<li>No files found.</li>';
+                    }
+                } catch (error) {
+                    document.getElementById('fileList').innerHTML = '<li>Error loading files.</li>';
+                }
+            }
+
+            // Load files on page load
+            window.onload = loadFiles;
+        </script>
+</body>
+</html>
